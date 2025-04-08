@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 import os
+import uuid  # Egyedi azonosítók generálásához
 
 # Alapértelmezett téma beállítás (sötét)
 st.set_page_config(page_title="Napi Naplózó", page_icon="📓", layout="wide")
@@ -68,7 +69,77 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Session state inicializálása
+# Egyedi ID generálása
+def generate_unique_id():
+    return str(uuid.uuid4())  # UUID használata a még jobb egyediség érdekében
+
+# Adatok betöltése fájlból
+def load_data():
+    try:
+        if os.path.exists("naplo_adatok.json"):
+            with open("naplo_adatok.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+                
+                # Ellenőrizzük és betöltjük az adatokat
+                if "tasks" in data:
+                    st.session_state.tasks = data["tasks"]
+                else:
+                    st.session_state.tasks = {}
+                    
+                if "activities" in data:
+                    st.session_state.activities = data["activities"]
+                else:
+                    st.session_state.activities = {}
+                    
+                if "ratings" in data:
+                    st.session_state.ratings = data["ratings"]
+                else:
+                    st.session_state.ratings = {}
+                    
+                if "reading" in data:
+                    st.session_state.reading = data["reading"]
+                else:
+                    st.session_state.reading = {}
+                    
+                if "activity_list" in data:
+                    st.session_state.activity_list = data["activity_list"]
+                else:
+                    st.session_state.activity_list = ["Példa tevékenység"]
+    except Exception as e:
+        st.error(f"Hiba történt az adatok betöltésekor: {e}")
+        # Alapértelmezett értékek beállítása hiba esetén
+        if 'tasks' not in st.session_state:
+            st.session_state.tasks = {}
+        if 'activities' not in st.session_state:
+            st.session_state.activities = {}
+        if 'ratings' not in st.session_state:
+            st.session_state.ratings = {}
+        if 'reading' not in st.session_state:
+            st.session_state.reading = {}
+        if 'activity_list' not in st.session_state:
+            st.session_state.activity_list = ["Példa tevékenység"]
+
+# Adatok mentése fájlba
+def save_data():
+    try:
+        data = {
+            "tasks": st.session_state.tasks,
+            "activities": st.session_state.activities,
+            "ratings": st.session_state.ratings,
+            "reading": st.session_state.reading,
+            "activity_list": st.session_state.activity_list
+        }
+        with open("naplo_adatok.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+        
+        # Mentés után újratöltjük az adatokat, hogy biztosítsuk a konzisztenciát
+        # load_data()
+        return True
+    except Exception as e:
+        st.error(f"Hiba történt az adatok mentésekor: {e}")
+        return False
+
+# Inicializálás és alapértelmezett értékek
 if 'current_date' not in st.session_state:
     st.session_state.current_date = datetime.date.today()
 if 'tasks' not in st.session_state:
@@ -80,7 +151,10 @@ if 'ratings' not in st.session_state:
 if 'reading' not in st.session_state:
     st.session_state.reading = {}
 if 'activity_list' not in st.session_state:
-    st.session_state.activity_list = ["Példa tevékenység"]  # Kezdetben egy példa tevékenység
+    st.session_state.activity_list = ["Példa tevékenység"]
+
+# Adatok betöltése
+load_data()
 
 # Dátum formázása
 def format_date(date):
@@ -99,10 +173,10 @@ def load_day(date_key):
         st.session_state.tasks[date_key] = []
     if date_key not in st.session_state.activities:
         st.session_state.activities[date_key] = {}
-        # Inicializáljuk az összes tevékenységet False-ra
-        for activity in st.session_state.activity_list:
-            if activity not in st.session_state.activities[date_key]:
-                st.session_state.activities[date_key][activity] = False
+    # Inicializáljuk az összes tevékenységet False-ra
+    for activity in st.session_state.activity_list:
+        if activity not in st.session_state.activities[date_key]:
+            st.session_state.activities[date_key][activity] = False
     if date_key not in st.session_state.ratings:
         st.session_state.ratings[date_key] = 5
     if date_key not in st.session_state.reading:
@@ -110,47 +184,6 @@ def load_day(date_key):
 
 # Az aktuális nap betöltése
 load_day(current_date_key)
-
-# Adatok betöltése fájlból
-def load_data():
-    try:
-        if os.path.exists("naplo_adatok.json"):
-            with open("naplo_adatok.json", "r", encoding="utf-8") as f:
-                data = json.load(f)
-                st.session_state.tasks = data.get("tasks", {})
-                st.session_state.activities = data.get("activities", {})
-                st.session_state.ratings = data.get("ratings", {})
-                st.session_state.reading = data.get("reading", {})
-                st.session_state.activity_list = data.get("activity_list", ["Példa tevékenység"])
-                
-                # Ellenőrizzük, hogy az aktuális nap be van-e töltve
-                load_day(current_date_key)
-    except Exception as e:
-        st.error(f"Hiba történt az adatok betöltésekor: {e}")
-
-# Adatok mentése fájlba
-def save_data():
-    try:
-        data = {
-            "tasks": st.session_state.tasks,
-            "activities": st.session_state.activities,
-            "ratings": st.session_state.ratings,
-            "reading": st.session_state.reading,
-            "activity_list": st.session_state.activity_list
-        }
-        with open("naplo_adatok.json", "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-        return True
-    except Exception as e:
-        st.error(f"Hiba történt az adatok mentésekor: {e}")
-        return False
-
-# Egyedi ID generálása
-def generate_unique_id():
-    return str(datetime.datetime.now().timestamp())
-
-# Adatok betöltése
-load_data()
 
 # Fejléc
 st.markdown(f"<h1 class='header-text'>{format_date(st.session_state.current_date)} NAPLÓZÁS</h1>", unsafe_allow_html=True)
@@ -189,31 +222,35 @@ with col1:
                 # Minden naphoz hozzáadjuk az új tevékenységet False értékkel
                 for day_key in st.session_state.activities:
                     st.session_state.activities[day_key][new_activity] = False
+                # Azonnal mentjük az adatokat
+                save_data()
                 st.rerun()
     
     # Tevékenységek checkboxok
     if st.session_state.activity_list:
-        for activity in st.session_state.activity_list:
+        for i, activity in enumerate(st.session_state.activity_list):
             # Biztosítjuk, hogy minden tevékenység létezik az adott napon
             if activity not in st.session_state.activities[current_date_key]:
                 st.session_state.activities[current_date_key][activity] = False
                 
             # Checkbox megjelenítése
             value = st.session_state.activities[current_date_key].get(activity, False)
-            st.session_state.activities[current_date_key][activity] = st.checkbox(
-                activity, 
-                value=value, 
-                key=f"activity_{activity}_{current_date_key}"  # Egyedi kulcs dátummal
-            )
+            checkbox_key = f"activity_{i}_{current_date_key}"
+            is_checked = st.checkbox(activity, value=value, key=checkbox_key)
+            st.session_state.activities[current_date_key][activity] = is_checked
             
             # Tevékenység törlése gomb
-            if st.button("🗑️", key=f"delete_activity_{activity}_{current_date_key}"):  # Egyedi kulcs dátummal
-                st.session_state.activity_list.remove(activity)
-                # Töröljük a tevékenységet minden napból
-                for day_key in st.session_state.activities:
-                    if activity in st.session_state.activities[day_key]:
-                        del st.session_state.activities[day_key][activity]
-                st.rerun()
+            delete_key = f"delete_activity_{i}_{current_date_key}"
+            if st.button("🗑️", key=delete_key):
+                if activity in st.session_state.activity_list:
+                    st.session_state.activity_list.remove(activity)
+                    # Töröljük a tevékenységet minden napból
+                    for day_key in st.session_state.activities:
+                        if activity in st.session_state.activities[day_key]:
+                            del st.session_state.activities[day_key][activity]
+                    # Azonnal mentjük az adatokat
+                    save_data()
+                    st.rerun()
     else:
         st.info("Nincs tevékenység. Adj hozzá újat!")
     
@@ -230,13 +267,13 @@ with col1:
         st.session_state.reading[current_date_key]["cim"] = st.text_input(
             "Cím", 
             value=st.session_state.reading[current_date_key].get("cim", ""),
-            key=f"book_title_{current_date_key}"  # Egyedi kulcs dátummal
+            key=f"book_title_{current_date_key}"
         )
         st.session_state.reading[current_date_key]["oldalak"] = st.number_input(
             "Oldalak száma", 
             min_value=0, 
             value=st.session_state.reading[current_date_key].get("oldalak", 0),
-            key=f"book_pages_{current_date_key}"  # Egyedi kulcs dátummal
+            key=f"book_pages_{current_date_key}"
         )
     
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -248,7 +285,7 @@ with col1:
         min_value=1, 
         max_value=10, 
         value=st.session_state.ratings[current_date_key],
-        key=f"day_rating_{current_date_key}"  # Egyedi kulcs dátummal
+        key=f"day_rating_{current_date_key}"
     )
     
     # Értékelési skála ikonsávja
@@ -264,38 +301,52 @@ with col2:
     col_task1, col_task2 = st.columns([3, 1])
     
     with col_task1:
-        new_task = st.text_input("Új teendő", key=f"new_task_input_{current_date_key}")  # Egyedi kulcs dátummal
+        new_task = st.text_input("Új teendő", key=f"new_task_input_{current_date_key}")
     
     with col_task2:
-        if st.button("Hozzáadás", key=f"add_task_btn_{current_date_key}"):  # Egyedi kulcs dátummal
+        if st.button("Hozzáadás", key=f"add_task_btn_{current_date_key}"):
             if new_task.strip():
                 # Egyedi ID generálása az új teendőhöz
                 task_id = generate_unique_id()
+                
+                # Inicializáljuk a tasks[current_date_key] listát, ha még nem létezik
+                if current_date_key not in st.session_state.tasks:
+                    st.session_state.tasks[current_date_key] = []
+                
+                # Hozzáadás
                 st.session_state.tasks[current_date_key].append({
                     "id": task_id,
                     "text": new_task,
                     "completed": False,
                     "timestamp": datetime.datetime.now().strftime("%H:%M")
                 })
+                
+                # Azonnal mentjük az adatokat
+                save_data()
                 st.rerun()
     
     # Teendők listája
-    if st.session_state.tasks[current_date_key]:
+    if current_date_key in st.session_state.tasks and st.session_state.tasks[current_date_key]:
         st.markdown("<div style='margin-top: 20px;'>", unsafe_allow_html=True)
+        
+        # Létrehozunk egy ideiglenes listát a törlésekhez
+        tasks_to_keep = []
+        
         for i, task in enumerate(st.session_state.tasks[current_date_key]):
             # Biztosítjuk, hogy minden feladatnak van egyedi ID-ja
             if "id" not in task:
-                task["id"] = f"{i}_{generate_unique_id()}"
-                
+                task["id"] = generate_unique_id()
+            
+            task_id = task["id"]
             col_check, col_text, col_delete = st.columns([1, 5, 1])
             
             with col_check:
                 completed = st.checkbox(
                     "", 
                     value=task["completed"], 
-                    key=f"task_check_{task['id']}"  # Egyedi ID használata
+                    key=f"task_check_{task_id}_{current_date_key}"
                 )
-                st.session_state.tasks[current_date_key][i]["completed"] = completed
+                task["completed"] = completed
             
             with col_text:
                 if task["completed"]:
@@ -304,9 +355,19 @@ with col2:
                     st.markdown(f"{task['text']} <small>({task['timestamp']})</small>", unsafe_allow_html=True)
             
             with col_delete:
-                if st.button("🗑️", key=f"delete_task_{task['id']}"):  # Egyedi ID használata
-                    st.session_state.tasks[current_date_key].pop(i)
-                    st.rerun()
+                if st.button("🗑️", key=f"delete_task_{task_id}_{current_date_key}"):
+                    continue  # Ha törölni kell, ne adjuk hozzá a megtartandó listához
+            
+            # Ha nem töröljük, adjuk hozzá a megtartandó listához
+            tasks_to_keep.append(task)
+        
+        # Ha változott a lista mérete (törlés történt), frissítsük
+        if len(tasks_to_keep) < len(st.session_state.tasks[current_date_key]):
+            st.session_state.tasks[current_date_key] = tasks_to_keep
+            # Azonnal mentjük az adatokat
+            save_data()
+            st.rerun()
+        
         st.markdown("</div>", unsafe_allow_html=True)
     else:
         st.info("Nincs teendő erre a napra.")
@@ -388,9 +449,11 @@ st.markdown("</div>", unsafe_allow_html=True)
 col_save1, col_save2, col_save3 = st.columns([1, 2, 1])
 with col_save2:
     st.markdown("<div class='big-green-button'>", unsafe_allow_html=True)
-    if st.button("NAP MENTÉSE", key=f"save_button_{current_date_key}"):  # Egyedi kulcs dátummal
+    if st.button("NAP MENTÉSE", key=f"save_button_{current_date_key}"):
         if save_data():
             st.success("A napi adatok sikeresen elmentve!")
+            # Újratöltjük az adatokat a mentés után
+            load_data()
         else:
             st.error("Hiba történt a mentés során!")
     st.markdown("</div>", unsafe_allow_html=True)

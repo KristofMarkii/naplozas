@@ -1,0 +1,72 @@
+{
+    "tasks": {
+        "2025-04-08": [
+            {
+                "id": "1744119417.076091",
+                "text": "csekk befizetes",
+                "completed": true,
+                "timestamp": "15:36"
+            },
+            {
+                "id": "1744119424.457443",
+                "text": "takarítás",
+                "completed": true,
+                "timestamp": "15:37"
+            },
+            {
+                "id": "1744119438.170715",
+                "text": "ebéd főzés",
+                "completed": true,
+                "timestamp": "15:37"
+            },
+            {
+                "id": "17c1d37b-84e0-4419-907d-6121ffe77476",
+                "text": "mosás",
+                "completed": true,
+                "timestamp": "16:04"
+            }
+        ],
+        "2025-04-09": [
+            {
+                "id": "23117570-c5a1-4db6-9267-18431399fb4c",
+                "text": "mosás",
+                "completed": false,
+                "timestamp": "16:04"
+            }
+        ]
+    },
+    "activities": {
+        "2025-04-08": {
+            "programozás ": true,
+            "Olvasás": true,
+            "Tanulás": false,
+            "Lazítás": false
+        },
+        "2025-04-09": {
+            "programozás ": false,
+            "Olvasás": false,
+            "Tanulás": false,
+            "Lazítás": false
+        }
+    },
+    "ratings": {
+        "2025-04-08": 8,
+        "2025-04-09": 5
+    },
+    "reading": {
+        "2025-04-08": {
+            "cim": "",
+            "oldalak": 0
+        },
+        "2025-04-09": {
+            "cim": "",
+            "oldalak": 0
+        }
+    },
+    "activity_list": [
+        "programozás ",
+        "Olvasás",
+        "Tanulás",
+        "Lazítás"
+    ]
+}
