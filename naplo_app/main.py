@@ -145,6 +145,10 @@ def save_data():
         st.error(f"Hiba történt az adatok mentésekor: {e}")
         return False
 
+# Egyedi ID generálása
+def generate_unique_id():
+    return str(datetime.datetime.now().timestamp())
+
 # Adatok betöltése
 load_data()
 
@@ -199,11 +203,11 @@ with col1:
             st.session_state.activities[current_date_key][activity] = st.checkbox(
                 activity, 
                 value=value, 
-                key=f"activity_{activity}"
+                key=f"activity_{activity}_{current_date_key}"  # Egyedi kulcs dátummal
             )
             
             # Tevékenység törlése gomb
-            if st.button("🗑️", key=f"delete_activity_{activity}"):
+            if st.button("🗑️", key=f"delete_activity_{activity}_{current_date_key}"):  # Egyedi kulcs dátummal
                 st.session_state.activity_list.remove(activity)
                 # Töröljük a tevékenységet minden napból
                 for day_key in st.session_state.activities:
@@ -226,13 +230,13 @@ with col1:
         st.session_state.reading[current_date_key]["cim"] = st.text_input(
             "Cím", 
             value=st.session_state.reading[current_date_key].get("cim", ""),
-            key="book_title"
+            key=f"book_title_{current_date_key}"  # Egyedi kulcs dátummal
         )
         st.session_state.reading[current_date_key]["oldalak"] = st.number_input(
             "Oldalak száma", 
             min_value=0, 
             value=st.session_state.reading[current_date_key].get("oldalak", 0),
-            key="book_pages"
+            key=f"book_pages_{current_date_key}"  # Egyedi kulcs dátummal
         )
     
     st.markdown("<hr>", unsafe_allow_html=True)
@@ -244,7 +248,7 @@ with col1:
         min_value=1, 
         max_value=10, 
         value=st.session_state.ratings[current_date_key],
-        key="day_rating"
+        key=f"day_rating_{current_date_key}"  # Egyedi kulcs dátummal
     )
     
     # Értékelési skála ikonsávja
@@ -260,12 +264,15 @@ with col2:
     col_task1, col_task2 = st.columns([3, 1])
     
     with col_task1:
-        new_task = st.text_input("Új teendő", key="new_task_input")
+        new_task = st.text_input("Új teendő", key=f"new_task_input_{current_date_key}")  # Egyedi kulcs dátummal
     
     with col_task2:
-        if st.button("Hozzáadás", key="add_task_btn"):
+        if st.button("Hozzáadás", key=f"add_task_btn_{current_date_key}"):  # Egyedi kulcs dátummal
             if new_task.strip():
+                # Egyedi ID generálása az új teendőhöz
+                task_id = generate_unique_id()
                 st.session_state.tasks[current_date_key].append({
+                    "id": task_id,
                     "text": new_task,
                     "completed": False,
                     "timestamp": datetime.datetime.now().strftime("%H:%M")
@@ -276,13 +283,17 @@ with col2:
     if st.session_state.tasks[current_date_key]:
         st.markdown("<div style='margin-top: 20px;'>", unsafe_allow_html=True)
         for i, task in enumerate(st.session_state.tasks[current_date_key]):
+            # Biztosítjuk, hogy minden feladatnak van egyedi ID-ja
+            if "id" not in task:
+                task["id"] = f"{i}_{generate_unique_id()}"
+                
             col_check, col_text, col_delete = st.columns([1, 5, 1])
             
             with col_check:
                 completed = st.checkbox(
                     "", 
                     value=task["completed"], 
-                    key=f"task_check_{i}"
+                    key=f"task_check_{task['id']}"  # Egyedi ID használata
                 )
                 st.session_state.tasks[current_date_key][i]["completed"] = completed
             
@@ -293,7 +304,7 @@ with col2:
                     st.markdown(f"{task['text']} <small>({task['timestamp']})</small>", unsafe_allow_html=True)
             
             with col_delete:
-                if st.button("🗑️", key=f"delete_task_{i}"):
+                if st.button("🗑️", key=f"delete_task_{task['id']}"):  # Egyedi ID használata
                     st.session_state.tasks[current_date_key].pop(i)
                     st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -377,7 +388,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 col_save1, col_save2, col_save3 = st.columns([1, 2, 1])
 with col_save2:
     st.markdown("<div class='big-green-button'>", unsafe_allow_html=True)
-    if st.button("NAP MENTÉSE", key="save_button"):
+    if st.button("NAP MENTÉSE", key=f"save_button_{current_date_key}"):  # Egyedi kulcs dátummal
         if save_data():
             st.success("A napi adatok sikeresen elmentve!")
         else:
